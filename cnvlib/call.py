@@ -7,7 +7,7 @@ import pandas as pd
 from . import segfilters
 
 
-def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=None,
+def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=1,
             is_reference_male=False, is_sample_female=False, filters=None,
             thresholds=(-1.1, -0.25, 0.2, 0.7)):
     if method not in ("threshold", "clonal", "none"):
