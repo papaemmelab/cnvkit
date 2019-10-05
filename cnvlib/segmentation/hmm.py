@@ -15,7 +15,7 @@ from ..descriptives import biweight_midvariance
 from ..segfilters import squash_by_groups
 
 
-def segment_hmm(cnarr, method, window=None, variants=None, processes=1):
+def segment_hmm(cnarr, method, window=None, variants=None, processes=4):
     """Segment bins by Hidden Markov Model.
 
     Use Viterbi method to infer copy number segments from sequential data.
@@ -196,7 +196,7 @@ def variants_in_segment(varr, segment, min_variants=50):
         # Merge adjacent bins with the same state to create segments
         fake_cnarr = CNA(varr.add_columns(weight=1, log2=0, gene='.').data)
         results = squash_by_groups(fake_cnarr,
-                                   varr.as_series(states),
+                                   pd.Series(states),
                                    by_arm=False)
         assert (results.start < results.end).all()
 

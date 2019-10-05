@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import sys
+import json
 
 # Filter spurious Cython warnings re: numpy
 # https://github.com/numpy/numpy/pull/432
@@ -648,6 +649,10 @@ do_segmentation = public(segmentation.do_segmentation)
 def _cmd_segment(args):
     """Infer copy number segments from the given coverage table."""
     cnarr = read_cna(args.filename)
+    logging.info(f"args: custom_segments={args.custom_segments}")
+    with open(args.custom_segments, 'r') as f:
+        custom_segments = json.load(f)
+        logging.info(f"commands: custom_segments={custom_segments}")
     variants = load_het_snps(args.vcf, args.sample_id, args.normal_id,
                              args.min_variant_depth, args.zygosity_freq)
     results = segmentation.do_segmentation(cnarr, args.method, args.threshold,
@@ -656,7 +661,8 @@ def _cmd_segment(args):
                                            skip_outliers=args.drop_outliers,
                                            save_dataframe=bool(args.dataframe),
                                            rscript_path=args.rscript_path,
-                                           processes=args.processes)
+                                           processes=args.processes,
+                                           custom_segments=custom_segments)
     if args.dataframe:
         segments, dframe = results
         with open(args.dataframe, 'w') as handle:
@@ -708,6 +714,8 @@ P_segment_vcf = P_segment.add_argument_group(
 P_segment_vcf.add_argument('-v', '--vcf', metavar="FILENAME",
         help="""VCF file name containing variants for segmentation by allele
                 frequencies.""")
+P_segment_vcf.add_argument('-c', '--custom-segments', metavar="FILENAME",
+        help="""A JSON file containing a dictionary of custom segments in the format of {{'chrom': (start, end)}}""")
 P_segment_vcf.add_argument('-i', '--sample-id',
         help="""Specify the name of the sample in the VCF (-v/--vcf) to use for
                 b-allele frequency extraction and as the default plot title.""")

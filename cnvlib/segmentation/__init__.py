@@ -5,6 +5,7 @@ import math
 import os.path
 import tempfile
 from io import StringIO
+import sys
 
 import numpy as np
 import pandas as pd
@@ -23,7 +24,7 @@ SEGMENT_METHODS = ('cbs', 'flasso', 'haar', 'none',
 def do_segmentation(cnarr, method, threshold=None, variants=None,
                     skip_low=False, skip_outliers=10, min_weight=0,
                     save_dataframe=False, rscript_path="Rscript",
-                    processes=1):
+                    processes=4, custom_segments=None):
     """Infer copy number segments from the given coverage table."""
     if method not in SEGMENT_METHODS:
         raise ValueError("'method' must be one of: "
@@ -60,7 +61,7 @@ def do_segmentation(cnarr, method, threshold=None, variants=None,
         with parallel.pick_pool(processes) as pool:
             rets = list(pool.map(_ds, ((ca, method, threshold, variants,
                                         skip_low, skip_outliers, min_weight,
-                                        save_dataframe, rscript_path)
+                                        save_dataframe, rscript_path, custom_segments)
                                        for _, ca in cnarr.by_arm())))
         if save_dataframe:
             # rets is a list of (CNA, R dataframe string) -- unpack
@@ -88,11 +89,26 @@ def _ds(args):
     """Wrapper for parallel map"""
     return _do_segmentation(*args)
 
+def _insert_bp(segarr, chrom, bp):
+    df = segarr.reset_index()
+    df = df[df['chromosome']==chrom]
+    for i, row in df.iterrows():
+        if (row['start']<bp) & (row['end']>bp):
+            new_row = row.copy()
+            old_end = row['end']
+            df.at[i, 'end'] = bp
+            new_row['start'] = bp
+            new_row['end'] = old_end
+            df = df.append(new_row)
+            continue
+    df = df.sort_values(by=['start']).reset_index()
+    df = df.drop(columns=['level_0','index'])
+    return df
 
 def _do_segmentation(cnarr, method, threshold, variants=None,
                      skip_low=False, skip_outliers=10, min_weight=0,
                      save_dataframe=False,
-                     rscript_path="Rscript"):
+                     rscript_path="Rscript", custom_segments=None):
     """Infer copy number segments from the given coverage table."""
     if not len(cnarr):
         return cnarr
@@ -180,6 +196,49 @@ def _do_segmentation(cnarr, method, threshold, variants=None,
         newsegs = [hmm.variants_in_segment(subvarr, segment)
                    for segment, subvarr in variants.by_ranges(segarr)]
         segarr = segarr.as_dataframe(pd.concat(newsegs))
+        # introducing user specific breakpoints if there are no dnacopy-called a breakpoint nearby
+        if custom_segments != None:
+            cns = segarr.data
+            min_dist = 1000000
+            new_bps = []
+            for chrom, segs in custom_segments.items():
+                chrom = 'X' if chrom==23 else chrom
+                for n, seg in enumerate(segs):
+                    # seg_start =  0 if n == 0 else seg[0]
+                    # seg_end = sys.maxsize if n == (len(segs)-1) else seg[1]
+                    seg_start = seg[0]
+                    seg_end = seg[1]
+                    _cns = cns[cns['chromosome']==str(chrom)]
+                    if len(_cns) == 0:
+                        continue
+                    seg_start_closest = min(list(_cns['start']), key=lambda x:abs(x-seg_start))
+                    seg_end_closest = min(list(_cns['end']), key=lambda x:abs(x-seg_end))
+                    seg_start_dist = abs(seg_start_closest - seg_start)
+                    seg_end_dist = abs(seg_end_closest - seg_end)
+                    if seg_start_dist>min_dist:
+                        new_bps.append((chrom, seg_start))
+                    if seg_end_dist>min_dist:
+                        new_bps.append((chrom, seg_end))
+            if len(new_bps) != 0:
+                logging.info(f"Incoperating custom segments: {custom_segments}")
+                for s in new_bps:
+                    chrom = s[0]
+                    bp = s[1]
+                    cns = _insert_bp(cns, chrom, bp)
+                # recalculate log2 and probes
+                for i, row in cns.iterrows():
+                    chrom = row['chromosome']
+                    start = row['start']
+                    end = row['end']
+                    filtered_cn_data = filtered_cn.data
+                    seg_cnr = filtered_cn_data[(filtered_cn_data['chromosome']==chrom) & (filtered_cn_data['start']>start) & (filtered_cn_data['end']<end)]
+                    new_probes = len(seg_cnr)
+                    new_log2 = seg_cnr['log2'].mean()
+                    cns.at[i,'log2'] = new_log2
+                    cns.at[i,'probes'] = new_probes
+                segarr.data = cns
+
+        segarr.data = segarr.data.reset_index()
         segarr['baf'] = variants.baf_by_ranges(segarr)
 
     segarr = transfer_fields(segarr, cnarr)
