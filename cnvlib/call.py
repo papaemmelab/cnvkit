@@ -54,7 +54,7 @@ def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=None,
         if 'baf' in outarr:
             # Calculate major and minor allelic copy numbers (s.t. cn1 >= cn2)
             upper_baf = ((outarr['baf'] - .5).abs() + .5).fillna(1.0).values
-            outarr['cn1'] = ((absolutes * upper_baf).round()
+            outarr['cn1'] = (((absolutes * upper_baf + purity - 1)/purity).round()
                              .clip(0, outarr['cn'])
                              .astype('int'))
             outarr['cn2'] = outarr['cn'] - outarr['cn1']
