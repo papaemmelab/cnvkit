@@ -795,7 +795,7 @@ P_call.add_argument('-t', '--thresholds',
                 [Default: %(default)s]""")
 P_call.add_argument("--ploidy", type=int, default=2,
         help="Ploidy of the sample cells. [Default: %(default)d]")
-P_call.add_argument("--purity", type=float,
+P_call.add_argument("--purity", type=float, default=1.0,
         help="Estimated tumor cell fraction, a.k.a. purity or cellularity.")
 P_call.add_argument("--drop-low-coverage", action='store_true',
         help="""Drop very-low-coverage bins before segmentation to avoid

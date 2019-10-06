@@ -7,7 +7,7 @@ import pandas as pd
 from . import segfilters
 
 
-def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=1,
+def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=None,
             is_reference_male=False, is_sample_female=False, filters=None,
             thresholds=(-1.1, -0.25, 0.2, 0.7)):
     if method not in ("threshold", "clonal", "none"):
@@ -53,6 +53,7 @@ def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=1,
         outarr['cn'] = absolutes.round().astype('int')
         if 'baf' in outarr:
             # Calculate major and minor allelic copy numbers (s.t. cn1 >= cn2)
+            logging.info(purity)
             upper_baf = ((outarr['baf'] - .5).abs() + .5).fillna(1.0).values
             outarr['cn1'] = (((absolutes * upper_baf + purity - 1)/purity).round()
                              .clip(0, outarr['cn'])
