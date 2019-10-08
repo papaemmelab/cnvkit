@@ -649,10 +649,11 @@ do_segmentation = public(segmentation.do_segmentation)
 def _cmd_segment(args):
     """Infer copy number segments from the given coverage table."""
     cnarr = read_cna(args.filename)
-    logging.info(f"args: custom_segments={args.custom_segments}")
-    with open(args.custom_segments, 'r') as f:
-        custom_segments = json.load(f)
-        logging.info(f"commands: custom_segments={custom_segments}")
+    if args.custom_segments:
+        with open(args.custom_segments, 'r') as f:
+                custom_segments = json.load(f)
+    else:
+        custom_segments = None
     variants = load_het_snps(args.vcf, args.sample_id, args.normal_id,
                              args.min_variant_depth, args.zygosity_freq)
     results = segmentation.do_segmentation(cnarr, args.method, args.threshold,
@@ -714,7 +715,7 @@ P_segment_vcf = P_segment.add_argument_group(
 P_segment_vcf.add_argument('-v', '--vcf', metavar="FILENAME",
         help="""VCF file name containing variants for segmentation by allele
                 frequencies.""")
-P_segment_vcf.add_argument('-c', '--custom-segments', metavar="FILENAME",
+P_segment_vcf.add_argument('-c', '--custom-segments', metavar="FILENAME", default=None,
         help="""A JSON file containing a dictionary of custom segments in the format of {{'chrom': (start, end)}}""")
 P_segment_vcf.add_argument('-i', '--sample-id',
         help="""Specify the name of the sample in the VCF (-v/--vcf) to use for
@@ -731,6 +732,10 @@ P_segment_vcf.add_argument('-z', '--zygosity-freq',
         help="""Ignore VCF's genotypes (GT field) and instead infer zygosity
                 from allele frequencies.  [Default if used without a number:
                 %(const)s]""")
+P_segment_vcf.add_argument('--use-het-prob',
+        action='store_true',
+        help="""Use heterozygous probability instead of vaf to determine whether a snp is heterozygous.
+                VCF must have a INFO filed called AB""")
 
 P_segment.set_defaults(func=_cmd_segment)
 
@@ -833,6 +838,10 @@ P_call_vcf.add_argument('-z', '--zygosity-freq',
         help="""Ignore VCF's genotypes (GT field) and instead infer zygosity
                 from allele frequencies.  [Default if used without a number:
                 %(const)s]""")
+P_call.add_argument('--use-het-prob',
+        action='store_true',
+        help="""Use heterozygous probability instead of vaf to determine whether a snp is heterozygous.
+                VCF must have a INFO filed called AB""")
 
 P_call.set_defaults(func=_cmd_call)
 

@@ -82,7 +82,7 @@ class VariantArray(GenomicArray):
                 self[zyg_key] = zyg
         return self
 
-    def heterozygous(self):
+    def heterozygous(self, use_het_prob=True):
         """Subset to only heterozygous variants.
 
         Use 'zygosity' or 'n_zygosity' genotype values (if present) to exclude
@@ -97,13 +97,20 @@ class VariantArray(GenomicArray):
             between the specified thresholds.
         """
         if 'zygosity' in self:
-            # Use existing genotype/zygosity info
-            zygosity = self['n_zygosity' if 'n_zygosity' in self
-                            else 'zygosity']
-            het_idx = (zygosity != 0.0) & (zygosity != 1.0)
-            if het_idx.any():
-                # Only take het. subset if the subset is not empty
-                self = self[het_idx]
+            # use AB prob
+            if use_het_prob:
+                logging.info("using het_prob")
+                het_prob = self['AB']
+                het_idx = het_prob > 0.999
+                if het_idx.any():
+                    self = self[het_idx]
+            else:
+                zygosity = self['n_zygosity' if 'n_zygosity' in self
+                                else 'zygosity']
+                het_idx = (zygosity != 0.0) & (zygosity != 1.0)
+                if het_idx.any():
+                    # Only take het. subset if the subset is not empty
+                    self = self[het_idx]
         return self
 
     def mirrored_baf(self, above_half=None, tumor_boost=False):

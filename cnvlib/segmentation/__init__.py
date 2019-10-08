@@ -220,7 +220,6 @@ def _do_segmentation(cnarr, method, threshold, variants=None,
                     if seg_end_dist>min_dist:
                         new_bps.append((chrom, seg_end))
             if len(new_bps) != 0:
-                logging.info(f"Incoperating custom segments: {custom_segments}")
                 for s in new_bps:
                     chrom = s[0]
                     bp = s[1]

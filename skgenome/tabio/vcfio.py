@@ -41,7 +41,7 @@ def read_vcf(infile, sample_id=None, normal_id=None,
         nid = None
 
     columns = ['chromosome', 'start', 'end', 'ref', 'alt', 'somatic',
-               'zygosity', 'depth', 'alt_count']
+               'zygosity', 'depth', 'alt_count','AB']
     if nid:
         columns.extend(['n_zygosity', 'n_depth', 'n_alt_count'])
 
@@ -226,6 +226,10 @@ def _parse_records(records, sample_id, normal_id, skip_reject):
                 alt_count = 0
                 zygosity = 0.0
 
+            if 'AB' in record.info:
+                het_prob = record.info['AB']
+
+
         is_som = "SOMATIC" in record.info and bool(record.info.get("SOMATIC"))
         # Split multiallelics?
         # XXX Ensure sample genotypes are handled properly
@@ -237,7 +241,7 @@ def _parse_records(records, sample_id, normal_id, skip_reject):
                     continue
                 end = _get_end(start, alt, record.info)
                 row = (record.chrom, start, end, record.ref, alt,
-                       is_som, zygosity, depth, alt_count)
+                       is_som, zygosity, depth, alt_count, het_prob)
                 if normal_id:
                     row += (n_zygosity, n_depth, n_alt_count)
                 yield row

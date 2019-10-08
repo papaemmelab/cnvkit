@@ -186,7 +186,6 @@ def variants_in_segment(varr, segment, min_variants=50):
                   verbose=False)
         states = np.array(model.predict(observations, algorithm='map'))
 
-        logging.info("Done, now finalizing")
         logging.debug("Model states: %s", model.states)
         logging.debug("Predicted states: %s", states[:100])
         logging.debug(str(collections.Counter(states)))

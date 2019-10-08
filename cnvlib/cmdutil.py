@@ -13,7 +13,7 @@ def read_cna(infile, sample_id=None, meta=None):
 
 
 def load_het_snps(vcf_fname, sample_id=None, normal_id=None,
-                  min_variant_depth=20, zygosity_freq=None, tumor_boost=False):
+                  min_variant_depth=20, zygosity_freq=None, tumor_boost=False, use_het_prob=True):
     if vcf_fname is None:
         return None
     varr = tabio.read(vcf_fname, 'vcf',
@@ -37,7 +37,7 @@ def load_het_snps(vcf_fname, sample_id=None, normal_id=None,
                          "T/N genotypes", somatic_idx.sum())
         varr = varr[~somatic_idx]
     orig_len = len(varr)
-    varr = varr.heterozygous()
+    varr = varr.heterozygous(use_het_prob=use_het_prob)
     logging.info("Kept %d heterozygous of %d VCF records",
                  len(varr), orig_len)
     # TODO use/explore tumor_boost option
