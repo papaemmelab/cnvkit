@@ -23,7 +23,7 @@ def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=None,
                 filters.remove(filt)
 
     if variants:
-        outarr["baf"] = variants.baf_by_ranges(outarr)
+        outarr["baf"] = variants.baf_by_ranges(outarr, above_half=True)
 
     if purity and purity < 1.0:
         logging.info("Rescaling sample with purity %g, ploidy %d",
@@ -53,11 +53,12 @@ def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=None,
         outarr['cn'] = absolutes.round().astype('int')
         if 'baf' in outarr:
             # Calculate major and minor allelic copy numbers (s.t. cn1 >= cn2)
-            logging.info(purity)
             upper_baf = ((outarr['baf'] - .5).abs() + .5).fillna(1.0).values
-            outarr['cn1'] = (((absolutes * upper_baf + purity - 1)/purity).round()
-                             .clip(0, outarr['cn'])
-                             .astype('int'))
+            if variants:
+                cn1 = absolutes * upper_baf
+            else:
+                cn1 = (absolutes * upper_baf + purity - 1)/purity
+            outarr['cn1'] = (cn1.round().clip(0, outarr['cn']).astype('int'))
             outarr['cn2'] = outarr['cn'] - outarr['cn1']
             is_null = (outarr['baf'].isnull() & (outarr['cn'] > 0))
             outarr[is_null, 'cn1'] = np.nan

@@ -238,7 +238,7 @@ def _do_segmentation(cnarr, method, threshold, variants=None,
                 segarr.data = cns
 
         segarr.data = segarr.data.reset_index()
-        segarr['baf'] = variants.baf_by_ranges(segarr)
+        segarr['baf'] = variants.baf_by_ranges(segarr, above_half=True)
 
     segarr = transfer_fields(segarr, cnarr)
     if save_dataframe:

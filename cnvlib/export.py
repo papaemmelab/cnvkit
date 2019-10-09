@@ -120,7 +120,7 @@ def export_nexus_ogt(cnarr, varr, min_weight=0.0):
         logging.info("Dropping %d bins with weight below %f",
                      mask_low_weight.sum(), min_weight)
         cnarr.data = cnarr.data[~mask_low_weight]
-    bafs = varr.baf_by_ranges(cnarr)
+    bafs = varr.baf_by_ranges(cnarr, above_half=True)
     logging.info("Placed %d variants into %d bins",
                  sum(~np.isnan(bafs)), len(cnarr))
     out_table = cnarr.data.loc[:, ['chromosome', 'start', 'end', 'log2']]
