@@ -101,7 +101,7 @@ class VariantArray(GenomicArray):
             if use_het_prob:
                 logging.info("using het_prob")
                 het_prob = self['AB']
-                het_idx = het_prob > 0.999
+                het_idx = het_prob > 0.99
                 if het_idx.any():
                     self = self[het_idx]
             else:

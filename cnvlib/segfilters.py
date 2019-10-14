@@ -175,7 +175,7 @@ def ci_baf(segarr):
     losses, and the rest with CI overlapping zero are collapsed as neutral.
     """
     def calculate_min_baf_amp(min_purity):
-        return 0.666*min_purity + 0.5*(1-min_purity)
+        return 0.667*min_purity + 0.5*(1-min_purity)
     def calculate_min_baf_del(min_purity):
         return 1*min_purity + 0.5*(1-min_purity)
     min_baf_amp = calculate_min_baf_amp(0.2)
@@ -186,6 +186,19 @@ def ci_baf(segarr):
     levels[(segarr['ci_hi'].values < 0) & (segarr['baf']> min_baf_del)] = -1 # 0.6 is the obs baf of 1+0 in purity=0.2. If lower value is choosen, it will allow lower purity at the cost of merging real cnv event with 1+1.
     return squash_by_groups(segarr, pd.Series(levels))
 
+@require_column('log2')
+def log2(segarr):
+    def calculate_min_baf_amp(min_purity):
+        return 0.667*min_purity + 0.5*(1-min_purity)
+    def calculate_min_baf_del(min_purity):
+        return 1*min_purity + 0.5*(1-min_purity)
+    min_baf_amp = calculate_min_baf_amp(0.2)
+    min_baf_del = calculate_min_baf_del(0.2)
+
+    levels = np.zeros(len(segarr))
+    levels[(segarr['log2']>-0.15) & (segarr['baf']<min_baf_del)] = 0
+    levels[(segarr['log2']<0.14) & (segarr['baf']<min_baf_amp)] = 0
+    return squash_by_groups(segarr, pd.Series(levels))
 
 @require_column('pi_lo', 'pi_hi')
 def pi(segarr):

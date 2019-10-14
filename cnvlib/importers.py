@@ -82,7 +82,6 @@ def parse_theta_results(fname):
     with open(fname) as handle:
         header = next(handle).rstrip().split('\t')
         body = next(handle).rstrip().split('\t')
-        assert len(body) == len(header) == 4
 
         # NLL
         nll = float(body[0])

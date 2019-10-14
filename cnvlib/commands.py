@@ -786,7 +786,7 @@ P_call.add_argument("--center-at", type=float,
                 re-centering, in case the --center option gives unsatisfactory
                 results.)""")
 P_call.add_argument('--filter', action='append', default=[], dest='filters',
-        choices=('ampdel', 'cn', 'ci', 'ci_baf', 'sem', 'pi', # 'bic'
+        choices=('ampdel', 'cn', 'log2', 'ci', 'ci_baf', 'sem', 'pi', # 'bic'
                 ),
         help="""Merge segments flagged by the specified filter(s) with the
                 adjacent segment(s).""")
