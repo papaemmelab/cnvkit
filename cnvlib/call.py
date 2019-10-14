@@ -57,7 +57,9 @@ def do_call(cnarr, variants=None, method="threshold", ploidy=2, purity=None,
             if variants:
                 cn1 = absolutes * upper_baf
             else:
-                cn1 = (absolutes * upper_baf + purity - 1)/purity
+                rescaled_upper_baf = rescale_baf(purity, upper_baf)
+                outarr['baf'] = rescaled_upper_baf
+                cn1 = absolutes * rescaled_upper_baf
             outarr['cn1'] = (cn1.round().clip(0, outarr['cn']).astype('int'))
             outarr['cn2'] = outarr['cn'] - outarr['cn1']
             is_null = (outarr['baf'].isnull() & (outarr['cn'] > 0))

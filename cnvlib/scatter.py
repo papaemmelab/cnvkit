@@ -229,7 +229,7 @@ def chromosome_scatter(cnarr, segments, variants, show_range, show_gene,
         axis = cnv_on_chromosome(axis, sel_probes, sel_segs, genes,
                           antitarget_marker=antitarget_marker,
                           do_trend=do_trend, x_limits=window_coords,
-                          y_min=y_min, y_max=y_max, segment_color=segment_color)
+                          y_min=y_min, y_max=y_max, segment_color=segment_color, variants=variants)
     elif variants:
         # Only plot SNVs in a single-panel layout
         _fig, axis = pyplot.subplots()
@@ -347,7 +347,7 @@ def select_range_genes(cnarr, segments, variants, show_range, show_gene,
 
 def cnv_on_chromosome(axis, probes, segments, genes, antitarget_marker=None,
                       do_trend=False, x_limits=None, y_min=None, y_max=None,
-                      segment_color=SEG_COLOR):
+                      segment_color=SEG_COLOR, variants=None):
     """Draw a scatter plot of probe values with optional segments overlaid.
 
     Parameters
@@ -373,7 +373,7 @@ def cnv_on_chromosome(axis, probes, segments, genes, antitarget_marker=None,
         x_min, x_max = x_limits
         axis.set_xlim(x_min * MB, x_max * MB)
     else:
-        set_xlim_from(axis, probes, segments)
+        set_xlim_from(axis, probes, segments, variants=variants)
     setup_chromosome(axis, y_min, y_max, "Copy ratio (log2)")
     if genes:
         highlight_genes(axis, genes,

@@ -167,6 +167,39 @@ def ci(segarr):
     return squash_by_groups(segarr, pd.Series(levels))
 
 
+@require_column('ci_lo', 'ci_hi', 'baf')
+def ci_baf(segarr):
+    """Merge segments by confidence interval (overlapping 0), consider BAF also support it.
+
+    Segments with lower CI above 0 are kept as gains, upper CI below 0 as
+    losses, and the rest with CI overlapping zero are collapsed as neutral.
+    """
+    def calculate_min_baf_amp(min_purity):
+        return 0.666*min_purity + 0.5*(1-min_purity)
+    def calculate_min_baf_del(min_purity):
+        return 1*min_purity + 0.5*(1-min_purity)
+    min_baf_amp = calculate_min_baf_amp(0.2)
+    min_baf_del = calculate_min_baf_del(0.2)
+
+    levels = np.zeros(len(segarr))
+    levels[(segarr['ci_lo'].values > 0) & (segarr['baf']> min_baf_amp)] = 1
+    levels[(segarr['ci_hi'].values < 0) & (segarr['baf']> min_baf_del)] = -1 # 0.6 is the obs baf of 1+0 in purity=0.2. If lower value is choosen, it will allow lower purity at the cost of merging real cnv event with 1+1.
+    return squash_by_groups(segarr, pd.Series(levels))
+
+
+@require_column('pi_lo', 'pi_hi')
+def pi(segarr):
+    """Merge segments by confidence interval (overlapping 0).
+
+    Segments with lower PI above 0 are kept as gains, upper PI below 0 as
+    losses, and the rest with PI overlapping zero are collapsed as neutral.
+    """
+    levels = np.zeros(len(segarr))
+    levels[segarr['pi_lo'].values > 0] = 1
+    levels[segarr['pi_hi'].values < 0] = -1
+    return squash_by_groups(segarr, pd.Series(levels))
+
+
 @require_column('cn')
 def cn(segarr):
     """Merge segments by integer copy number."""
