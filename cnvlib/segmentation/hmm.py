@@ -161,14 +161,15 @@ def as_observation_matrix(cnarr, variants=None):
 def variants_in_segment(varr, segment, min_variants=50):
     if len(varr) > min_variants:
         observations = varr.mirrored_baf(above_half=True)
-        state_names = ["neutral", "alt"]
+        state_names = ["neutral", "alt", 'del']
         distributions = [
             pom.NormalDistribution(0.5, .1, frozen=True),
             pom.NormalDistribution(0.67, .1, frozen=True),
+            pom.NormalDistribution(0.95, .03, frozen=True)
         ]
         n_states = len(distributions)
         # Starts -- prefer neutral
-        start_probabilities = [.95, .05]
+        start_probabilities = [.9, .05, .05]
         # Prefer to keep the current state in each transition
         # All other transitions are equally likely, to start
         transition_matrix = (np.identity(n_states) * 100
