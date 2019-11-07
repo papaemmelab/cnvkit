@@ -219,12 +219,12 @@ def cn(segarr):
     """Merge segments by integer copy number."""
     return squash_by_groups(segarr, segarr['cn'])
 
-@require_column('cn1', 'cn2', 'abberant_cell_frac')
+@require_column('cn1', 'cn2', 'aberrant_cell_frac')
 def cn_subclone(segarr):
     """Merge segments by integer copy number."""
     df = segarr.data
     for index, row in df.iterrows():
-        df.loc[index, 'hash'] = hashlib.md5(str(row[['cn1','cn2','abberant_cell_frac']].values).encode('utf-8')).hexdigest()
+        df.loc[index, 'hash'] = hashlib.md5(str(row[['cn1','cn2','aberrant_cell_frac']].values).encode('utf-8')).hexdigest()
     hash_key = list(df['hash'].unique())
     df['level'] = df['hash'].apply(lambda x: hash_key.index(x))
 

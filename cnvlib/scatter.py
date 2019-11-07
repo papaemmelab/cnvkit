@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 from matplotlib import pyplot
+import matplotlib.patches as mpatches
 from skgenome.rangelabel import unpack_range
 
 from . import core, params, plots
@@ -14,6 +15,8 @@ HIGHLIGHT_COLOR = 'gold'
 POINT_COLOR = '#606060'
 SEG_COLOR = 'darkorange'
 TREND_COLOR = '#A0A0A0'
+SUBCLONE_COLOR = '#0011FF'
+CNLOH_COLOR = "#02ba33"
 
 
 def do_scatter(cnarr, segments=None, variants=None,
@@ -85,8 +88,16 @@ def cnv_on_genome(axis, probes, segments, do_trend=False, y_min=None,
                   y_max=None, segment_color=SEG_COLOR):
     """Plot bin ratios and/or segments for all chromosomes on one plot."""
     # Configure axes etc.
+    patches = [
+        mpatches.Patch(color='darkorange', label='clonal'),
+        mpatches.Patch(color=CNLOH_COLOR, label='clonal CN-LOH'),
+        mpatches.Patch(color=SUBCLONE_COLOR, label='subclonal'),
+    ]
+    axis.legend(handles=patches, loc="upper right")
     axis.axhline(color='k')
     axis.set_ylabel("Copy ratio (log2)")
+    clone_frac = max(segments['aberrant_cell_frac'])
+    segments['aberrant_cell_frac']
     if not (y_min and y_max):
         if segments:
             # Auto-scale y-axis according to segment mean-coverage values
@@ -136,10 +147,15 @@ def cnv_on_genome(axis, probes, segments, do_trend=False, y_min=None,
 
         if chrom in chrom_segs:
             for seg in chrom_segs[chrom]:
-                color = choose_segment_color(seg, segment_color)
+                is_subclone = 1 if seg.aberrant_cell_frac != clone_frac else 0
+                color = choose_segment_color(seg, segment_color) if not is_subclone else SUBCLONE_COLOR
                 axis.plot((seg.start + x_offset, seg.end + x_offset),
                           (seg.log2, seg.log2),
                           color=color, linewidth=3, solid_capstyle='round')
+                if is_subclone:
+                    cn_state = str(int(seg.cn1)) + "+" + str(int(seg.cn2))
+                    text = f"{int(seg.aberrant_cell_frac*100)}% {cn_state}"
+                    axis.text(seg.start+x_offset, seg.log2+0.01, text, color=SUBCLONE_COLOR)
     return axis
 
 def snv_on_genome(axis, variants, chrom_sizes, segments, do_trend, segment_color):
@@ -519,6 +535,12 @@ def choose_segment_color(segment, highlight_color, default_bright=True):
     if segment.cn not in expected_ploidies.get(segment.chromosome, [2]):
         return highlight_color
 
+    # Detect CNLOH
+    if (segment.chromosome not in expected_ploidies and
+        'cn1' in segment._fields and 'cn2' in segment._fields and
+        (segment.cn1 == 2) and (segment.cn2 == 0)):
+        return CNLOH_COLOR
+    
     # Detect regions of allelic imbalance / LOH
     if (segment.chromosome not in expected_ploidies and
         'cn1' in segment._fields and 'cn2' in segment._fields and
