@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+import hashlib
 
 from .descriptives import weighted_median
 
@@ -218,6 +219,16 @@ def cn(segarr):
     """Merge segments by integer copy number."""
     return squash_by_groups(segarr, segarr['cn'])
 
+@require_column('cn1', 'cn2', 'abberant_cell_frac')
+def cn_subclone(segarr):
+    """Merge segments by integer copy number."""
+    df = segarr.data
+    for index, row in df.iterrows():
+        df.loc[index, 'hash'] = hashlib.md5(str(row[['cn1','cn2','abberant_cell_frac']].values).encode('utf-8')).hexdigest()
+    hash_key = list(df['hash'].unique())
+    df['level'] = df['hash'].apply(lambda x: hash_key.index(x))
+
+    return squash_by_groups(segarr, df['level'])
 
 @require_column('sem')
 def sem(segarr, zscore=1.96):
