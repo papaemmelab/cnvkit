@@ -96,8 +96,11 @@ def cnv_on_genome(axis, probes, segments, do_trend=False, y_min=None,
     axis.legend(handles=patches, loc="upper right")
     axis.axhline(color='k')
     axis.set_ylabel("Copy ratio (log2)")
-    clone_frac = max(segments['aberrant_cell_frac'])
-    segments['aberrant_cell_frac']
+    has_subclones = False
+    if 'aberrant_cell_frac' in segments.data.columns:
+        has_subclones = True
+        clone_frac = max(segments['aberrant_cell_frac'])
+        segments['aberrant_cell_frac']
     if not (y_min and y_max):
         if segments:
             # Auto-scale y-axis according to segment mean-coverage values
@@ -147,15 +150,21 @@ def cnv_on_genome(axis, probes, segments, do_trend=False, y_min=None,
 
         if chrom in chrom_segs:
             for seg in chrom_segs[chrom]:
-                is_subclone = 1 if seg.aberrant_cell_frac != clone_frac else 0
-                color = choose_segment_color(seg, segment_color) if not is_subclone else SUBCLONE_COLOR
-                axis.plot((seg.start + x_offset, seg.end + x_offset),
-                          (seg.log2, seg.log2),
-                          color=color, linewidth=3, solid_capstyle='round')
-                if is_subclone:
-                    cn_state = str(int(seg.cn1)) + "+" + str(int(seg.cn2))
-                    text = f"{int(seg.aberrant_cell_frac*100)}% {cn_state}"
-                    axis.text(seg.start+x_offset, seg.log2+0.01, text, color=SUBCLONE_COLOR)
+                if has_subclones:
+                    is_subclone = 1 if seg.aberrant_cell_frac != clone_frac else 0
+                    color = choose_segment_color(seg, segment_color) if not is_subclone else SUBCLONE_COLOR
+                    axis.plot((seg.start + x_offset, seg.end + x_offset),
+                            (max(y_min+0.1, seg.log2), max(y_min+0.1, seg.log2)),
+                            color=color, linewidth=3, solid_capstyle='round')
+                    if is_subclone:
+                        cn_state = str(int(seg.cn1)) + "+" + str(int(seg.cn2))
+                        text = f"{int(seg.aberrant_cell_frac*100)}% {cn_state}"
+                        axis.text(seg.start+x_offset, max(y_min+0.1, seg.log2+0.01), text)
+                else:
+                    color = choose_segment_color(seg, segment_color)
+                    axis.plot((seg.start + x_offset, seg.end + x_offset),
+                            (max(y_min+0.1, seg.log2), max(y_min+0.1, seg.log2)),
+                            color=color, linewidth=3, solid_capstyle='round')
     return axis
 
 def snv_on_genome(axis, variants, chrom_sizes, segments, do_trend, segment_color):
