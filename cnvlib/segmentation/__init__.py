@@ -91,8 +91,8 @@ def _ds(args):
 
 def _insert_bp(segarr, chrom, bp):
     df = segarr.reset_index()
-    df = df[df['chromosome']==chrom]
-    for i, row in df.iterrows():
+    _df = df[df['chromosome']==chrom]
+    for i, row in _df.iterrows():
         if (row['start']<bp) & (row['end']>bp):
             new_row = row.copy()
             old_end = row['end']
@@ -208,17 +208,19 @@ def _do_segmentation(cnarr, method, threshold, variants=None,
                     # seg_end = sys.maxsize if n == (len(segs)-1) else seg[1]
                     seg_start = seg[0]
                     seg_end = seg[1]
-                    _cns = cns[cns['chromosome']==str(chrom)]
-                    if len(_cns) == 0:
-                        continue
-                    seg_start_closest = min(list(_cns['start']), key=lambda x:abs(x-seg_start))
-                    seg_end_closest = min(list(_cns['end']), key=lambda x:abs(x-seg_end))
-                    seg_start_dist = abs(seg_start_closest - seg_start)
-                    seg_end_dist = abs(seg_end_closest - seg_end)
-                    if seg_start_dist>min_dist:
-                        new_bps.append((chrom, seg_start))
-                    if seg_end_dist>min_dist:
-                        new_bps.append((chrom, seg_end))
+                    # _cns = cns[cns['chromosome']==str(chrom)]
+                    # if len(_cns) == 0:
+                    #     continue
+                    # seg_start_closest = min(list(_cns['start']), key=lambda x:abs(x-seg_start))
+                    # seg_end_closest = min(list(_cns['end']), key=lambda x:abs(x-seg_end))
+                    # seg_start_dist = abs(seg_start_closest - seg_start)
+                    # seg_end_dist = abs(seg_end_closest - seg_end)
+                    # if seg_start_dist>min_dist:
+                    #     new_bps.append((chrom, seg_start))
+                    # if seg_end_dist>min_dist:
+                    #     new_bps.append((chrom, seg_end))
+                    new_bps.append((chrom, seg_start))
+                    new_bps.append((chrom, seg_end))
             if len(new_bps) != 0:
                 for s in new_bps:
                     chrom = s[0]

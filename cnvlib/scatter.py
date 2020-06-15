@@ -153,19 +153,106 @@ def cnv_on_genome(axis, probes, segments, do_trend=False, y_min=None,
                 if has_subclones:
                     is_subclone = 1 if seg.aberrant_cell_frac != clone_frac else 0
                     color = choose_segment_color(seg, segment_color) if not is_subclone else SUBCLONE_COLOR
+                    print(chrom, seg.end-seg.start, color)
                     axis.plot((seg.start + x_offset, seg.end + x_offset),
                             (max(y_min+0.1, seg.log2), max(y_min+0.1, seg.log2)),
                             color=color, linewidth=3, solid_capstyle='round')
                     if is_subclone:
                         cn_state = str(int(seg.cn1)) + "+" + str(int(seg.cn2))
                         text = f"{int(seg.aberrant_cell_frac*100)}% {cn_state}"
-                        axis.text(seg.start+x_offset, max(y_min+0.1, seg.log2+0.01), text)
+                        axis.text(seg.start+x_offset, max(y_min+0.1, seg.log2+0.01), text, fontsize=7)
                 else:
                     color = choose_segment_color(seg, segment_color)
                     axis.plot((seg.start + x_offset, seg.end + x_offset),
                             (max(y_min+0.1, seg.log2), max(y_min+0.1, seg.log2)),
                             color=color, linewidth=3, solid_capstyle='round')
     return axis
+
+
+def my_cnv_on_genome(axis, probes, segments, do_trend=False, y_min=None,
+                  y_max=None, segment_color=SEG_COLOR):
+    """Plot bin ratios and/or segments for all chromosomes on one plot."""
+    # Configure axes etc.
+    patches = [
+        mpatches.Patch(color='darkorange', label='clonal'),
+        mpatches.Patch(color=CNLOH_COLOR, label='clonal CN-LOH'),
+        mpatches.Patch(color=SUBCLONE_COLOR, label='subclonal'),
+    ]
+    axis.legend(handles=patches, loc="upper right")
+    axis.axhline(color='k')
+    axis.set_ylabel("Copy ratio (log2)")
+    has_subclones = False
+    if 'aberrant_cell_frac' in segments.data.columns:
+        has_subclones = True
+        clone_frac = max(segments['aberrant_cell_frac'])
+        segments['aberrant_cell_frac']
+    if not (y_min and y_max):
+        if segments:
+            # Auto-scale y-axis according to segment mean-coverage values
+            # (Avoid spuriously low log2 values in HLA and chrY)
+            low_chroms = segments.chromosome.isin(('6', 'chr6', 'Y', 'chrY'))
+            seg_auto_vals = segments[~low_chroms]['log2'].dropna()
+            if not y_min:
+                y_min = (np.nanmin([seg_auto_vals.min() - .2, -1.5])
+                         if len(seg_auto_vals) else -2.5)
+            if not y_max:
+                y_max = (np.nanmax([seg_auto_vals.max() + .2, 1.5])
+                         if len(seg_auto_vals) else 2.5)
+        else:
+            if not y_min:
+                y_min = -2.5
+            if not y_max:
+                y_max = 2.5
+    axis.set_ylim(y_min, y_max)
+
+    # Group probes by chromosome (to calculate plotting coordinates)
+    if probes:
+        chrom_sizes = plots.chromosome_sizes(probes)
+        chrom_probes = dict(probes.by_chromosome())
+        # Precalculate smoothing window size so all chromosomes have similar
+        # degree of smoothness
+        # NB: Target panel has ~1k bins/chrom. -> 250-bin window
+        #     Exome: ~10k bins/chrom. -> 2500-bin window
+        window_size = int(round(.15 * len(probes) /
+                                probes.chromosome.nunique()))
+    else:
+        chrom_sizes = plots.chromosome_sizes(segments)
+    # Same for segment calls
+    chrom_segs = dict(segments.by_chromosome()) if segments else {}
+
+    # Plot points & segments
+    x_starts = plots.plot_x_dividers(axis, chrom_sizes)
+    for chrom, x_offset in x_starts.items():
+        if probes and chrom in chrom_probes:
+            subprobes = chrom_probes[chrom]
+            x = 0.5 * (subprobes['start'] + subprobes['end']) + x_offset
+            axis.scatter(x, subprobes['log2'], marker='.',
+                         color=POINT_COLOR, edgecolor='none', alpha=0.2)
+            if do_trend:
+                # ENH break trendline by chromosome arm boundaries?
+                axis.plot(x, subprobes.smooth_log2(),  #window_size),
+                        color=POINT_COLOR, linewidth=2, zorder=-1)
+
+        if chrom in chrom_segs:
+            for seg in chrom_segs[chrom]:
+                if has_subclones:
+                    is_subclone = 1 if seg.aberrant_cell_frac != clone_frac else 0
+                    color = choose_segment_color(seg, segment_color) if not is_subclone else SUBCLONE_COLOR
+                    print(chrom, seg.end-seg.start, color)
+                    axis.plot((seg.start + x_offset, seg.end + x_offset),
+                            (max(y_min+0.1, seg.log2), max(y_min+0.1, seg.log2)),
+                            color=color, linewidth=3, solid_capstyle='round')
+                    if is_subclone:
+                        cn_state = str(int(seg.cn1)) + "+" + str(int(seg.cn2))
+                        text = f"{int(seg.aberrant_cell_frac*100)}% {cn_state}"
+                        axis.text(seg.start+x_offset, max(y_min+0.1, seg.log2+0.01), text, fontsize=7)
+                else:
+                    color = choose_segment_color(seg, segment_color)
+                    axis.plot((seg.start + x_offset, seg.end + x_offset),
+                            (max(y_min+0.1, seg.log2), max(y_min+0.1, seg.log2)),
+                            color=color, linewidth=3, solid_capstyle='round')
+    return axis
+
 
 def snv_on_genome(axis, variants, chrom_sizes, segments, do_trend, segment_color):
     """Plot a scatter-plot of SNP chromosomal positions and shifts."""

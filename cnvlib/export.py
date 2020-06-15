@@ -263,7 +263,7 @@ def assign_ci_start_end(segarr, cnarr):
 
 def segments2vcf(segments, ploidy, is_reference_male, is_sample_female):
     """Convert copy number segments to VCF records."""
-    out_dframe = segments.data.loc[:, ["chromosome", "end", "log2", "probes"]]
+    out_dframe = segments.data.loc[:, ["chromosome", "end", "log2", "probes", "aberrant_cell_frac"]]
     out_dframe["start"] = segments.start.replace(0, 1)
 
     if "cn" in segments:
@@ -326,7 +326,8 @@ def segments2vcf(segments, ploidy, is_reference_male, is_sample_female):
                   "SVLEN=%d" % out_row.svlen,
                   "FOLD_CHANGE=%f" % 2.0 ** out_row.log2,
                   "FOLD_CHANGE_LOG=%f" % out_row.log2,
-                  "PROBES=%d" % out_row.probes
+                  "PROBES=%d" % out_row.probes,
+                  "FRAC=%f" % out_row.aberrant_cell_frac
                  ]
         if has_ci:
             fields.extend([
