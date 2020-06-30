@@ -15,7 +15,7 @@ install_requires=[
         'pomegranate @ git+https://github.com/jmschrei/pomegranate@master',
         'matplotlib >= 1.3.1',
         'numpy >= 1.9',
-        'pandas == 0.25.3',
+        'pandas >= 0.24.2',
         'pyfaidx >= 0.4.7',
         'pysam >= 0.10.0',
         'reportlab >= 3.0',
