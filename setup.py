@@ -11,8 +11,8 @@ setup_args = {}
 # Dependencies for easy_install and pip:
 install_requires=[
         'biopython >= 1.62',
-        "cython == 0.29.20",
-        'pomegranate @ git+https://github.com/jmschrei/pomegranate@v0.13.4',
+        'cython == 0.29.20',
+        'pomegranate == 0.13.4',
         'matplotlib >= 1.3.1',
         'numpy >= 1.9',
         'pandas >= 0.24.2',
