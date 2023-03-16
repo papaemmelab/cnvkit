@@ -16,7 +16,7 @@ install_requires=[
         'matplotlib >= 1.3.1',
         'numpy >= 1.9',
         'pandas >= 0.24.2',
-        'pyfaidx >= 0.4.7',
+        'pyfaidx == 0.6.0',
         'pysam >= 0.10.0',
         'reportlab >= 3.0',
         'scipy >= 0.15.0',
